@@ -4,11 +4,53 @@
 *)
 
 open Bigarray
-open Matlab
 open Lacaml.D
 
 module Libsvm =
 struct
+  (* Some useful definitions from ../util/matlab.ml *)
+  module Matlab =
+  struct
+    let map2 f a1 a2 =
+      let m1 = Mat.dim1 a1 
+      and n1 = Mat.dim2 a1
+      and m2 = Mat.dim1 a2
+      and n2 = Mat.dim2 a2 in
+	if m1 == m2 || n1 == n2 then
+	  begin
+	    let r = Mat.create m1 n1 in
+	      for i = 1 to (max m1 m2) do
+		for j = 1 to (max n1 n2) do
+		  r.{i,j} <- f a1.{(min i m1),(min j n1)} a2.{(min i m2),(min j n2)};
+		done;
+	      done;
+	      r
+	  end
+	else
+	  failwith "Incompatible matrix dimensions"
+    let sub = map2 ( -. )
+    ;;
+    let add = map2 ( +. )
+    ;;
+    let mul = map2 ( *. )
+    ;;
+    let div = map2 ( /. )
+    ;;
+    let map_cols f a =
+      let n = Mat.dim2 a in 
+      let r = Mat.create 1 n in
+	for i = 1 to n do
+	  r.{1,i} <- f (Mat.col a i)
+	done;
+	r
+    ;;
+    let max = map_cols (Vec.max)
+    ;;
+    let min = map_cols (Vec.min)
+    ;;
+    let sum = map_cols Vec.sum
+    ;;
+  end
   type mat = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array2.t
   type mat_int = (int32, Bigarray.int32_elt, Bigarray.fortran_layout) Bigarray.Array2.t
   type vec = (float, Bigarray.float64_elt, Bigarray.fortran_layout) Bigarray.Array1.t
